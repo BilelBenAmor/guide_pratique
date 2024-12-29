@@ -73,7 +73,6 @@ teMgr = {
 		options: {
 			prefix: 'native_scportal'
 		},
-		credentials: "same-origin",
 
 		canPlayType: function (type) {
 			return ['video/x-scportal', 'audio/x-scportal'].indexOf(type.toLowerCase()) > -1
@@ -88,6 +87,7 @@ teMgr = {
 				mediaElement.renderer.show();
 			}
 
+			var settings = (options && options.scportal) || {};
 			var renderer = {
 				hide: () => {
 					if (subRenderer) subRenderer.hide();
@@ -107,7 +107,7 @@ teMgr = {
 						const mediaManifestUrl = new URL(src);
 						mediaManifestUrl.pathname +=  "/:api:/v1/media";
 						mediaManifestUrl.search = mediaManifestUrl.hash = "";
-						const mediaManifestResp = await fetch(mediaManifestUrl.href, {credentials: this.credentials, cache: "no-cache"});
+						const mediaManifestResp = await fetch(mediaManifestUrl.href, {credentials: settings.credentials || "same-origin", cache: "no-cache"});
 						const mediaManifest = await mediaManifestResp.json();
 
 						var adaptStreamSrc;

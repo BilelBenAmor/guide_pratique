@@ -21,7 +21,7 @@ TESettingsFromTracks.prototype = {
 		var subtitleTracks = [], altVideoTrack, audioDescTrack, transcriptTrack;
 		for (var child = media.firstElementChild; child; child = child.nextElementSibling) {
 			var kind = child.getAttribute('kind');
-			if (child.localName == 'track') {
+			if (child.localName == 'track' || child.localName == 'text-track') {
 				if (kind == 'subtitles') subtitleTracks.push(child);
 			} else if (child.localName == 'audio-track') {
 				if (kind == 'descriptions') audioDescTrack = child;
@@ -246,20 +246,20 @@ TESettingsFromTracks.prototype = {
 		panel.className = className + " " + this.classPrefix + 'Panel';
 		panel.setAttribute('role', 'dialog');
 		var closeBtn = panel.appendChild(this.createButton(
-			this.classPrefix + 'VisuallyHidden',
+			`${this.classPrefix}CloseBtn ${this.classPrefix}VisuallyHidden`,
 			"Fermer",
 			"Fermer la fenêtre")
 		);
 		panel.appendChild(content);
 		var focusOutBtn = panel.appendChild(this.createButton(
-			this.classPrefix + 'VisuallyHidden',
+			`${this.classPrefix}FocusOutBtn ${this.classPrefix}VisuallyHidden`,
 			"Sortir",
 			"Sortir de la fenêtre",
 			true)
 		);
 		panel.appendChild(focusOutBtn);
 		var focusRingBtn = panel.appendChild(this.createButton(
-			this.classPrefix + 'VisuallyHidden',
+			`${this.classPrefix}FocusRingBtn ${this.classPrefix}VisuallyHidden`,
 			"Retour",
 			"Retour en début de fenêtre", true)
 		);
@@ -364,9 +364,18 @@ TESettingsFromTracks.prototype = {
 	createSubtitleItem: function (trackElem) {
 		var self = this;
 		var item = document.createElement('li');
+		if (trackElem && trackElem.localName == 'text-track') {
+			const newTrackElem = document.createElement('track');
+			if (trackElem.hasAttribute('srclang')) newTrackElem.setAttribute('srclang', trackElem.getAttribute('srclang'));
+			if (trackElem.hasAttribute('label')) newTrackElem.setAttribute('label', trackElem.getAttribute('label'));
+			newTrackElem.setAttribute('src', URL.createObjectURL(new Blob([trackElem.textContent], {type: "text/vtt"})));
+			trackElem.replaceWith(newTrackElem);
+			trackElem = newTrackElem;
+		}
 		var src = trackElem ? trackElem.getAttribute('src') : "";
-		var title = trackElem ?  "Activer les sous-titres " + trackElem.getAttribute('srclang') : "Désactiver les sous-titres";
-		var label = trackElem ? trackElem.getAttribute('srclang') : "Désactivés";
+		var langOrLabel = trackElem && (trackElem.getAttribute('srclang') || trackElem.getAttribute('label'));
+		var title = langOrLabel ?  "Activer les sous-titres " + langOrLabel : "Désactiver les sous-titres";
+		var label = langOrLabel || "Désactivés";
 		var labelElt = item.appendChild(this.createInput(this.classPrefix + 'Subtitle', 'radio', label, title, null, src));
 		var input = labelElt.firstElementChild;
 		input.name = this.classPrefix + 'Subtitles_' + this.id;

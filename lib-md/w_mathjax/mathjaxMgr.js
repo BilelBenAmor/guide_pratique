@@ -5,7 +5,7 @@ window.mathjaxMgr = {
 	fConfig_menuSettings: '{zoom:"Double-Click", mpContext:true, mpMouse:true}',
 	fConfig_extentions: '["tex2jax.js","mml2jax.js","MathML/content-mathml.js","MathMenu.js","MathZoom.js","fast-preview.js","AssistiveMML.js"]',
 	fConfig_SVG: '{}',
-	fConfig_TeX: '{extensions:["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js","color.js","mhchem.js"]}',
+	fConfig_TeX: '{extensions:["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js","color.js","extpfeil.js","cancel.js","mhchem.js"]}',
 	fConfig_Extras: '',
 	fForceSansSerif: false,
 	fCallbacks: [],

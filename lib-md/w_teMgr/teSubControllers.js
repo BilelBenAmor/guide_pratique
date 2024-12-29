@@ -296,14 +296,17 @@ TEOverflowCtrl.prototype = {
 		if (!parseInt(style.width) && !parseInt(style.height)) return;
 
 		element.style.alignSelf = 'center';
+		element.parentElement.overflow = 'hidden';
 		var height = element.scrollHeight + parseInt(style.marginTop) + parseInt(style.marginBottom);
 		var width = element.scrollWidth + parseInt(style.marginLeft) + parseInt(style.marginRight);
-		var scale = Math.min(element.parentNode.clientHeight / height, element.parentNode.clientWidth / width);
+		const { height: parentClientHeight, width: parentClientWidth  } = element.parentElement.getBoundingClientRect();
+		var scale = Math.min(parentClientHeight / height, parentClientWidth / width);
 		if (scale < 1) {
 			self.onOverflow(element, scale);
 		} else {
 			element.style.alignSelf = '';
 		}
+		element.parentElement.overflow = '';
 	},
 
 	testActivesOverflow: function(unhide) {
@@ -342,18 +345,20 @@ TEOverflowTransformCtrl.prototype = Object.create(TEOverflowCtrl.prototype);
 TEOverflowTransformCtrl.prototype.onOverflow = function (element, scale) {
 	if (scale <= this.scrollThreshold) TEOverflowScrollCtrl.prototype.onOverflow.call(this, element, scale);
 	else {
+		const { height: clientHeight } = element.getBoundingClientRect();
 		element.classList.add('teOverflowTransform');
 		element.style.transform = 'scale(' + scale + ')';
 		element.style.transformOrigin = '50% 0';
 		element.style.alignSelf = 'flex-start';
 		element.style.overflow = 'visible';
+		element.style.marginBottom = ((clientHeight * scale) - clientHeight) + 'px';
 	}
 };
 
 TEOverflowTransformCtrl.prototype.endOverflow = function (element) {
 	element.classList.remove('teOverflowTransform');
 	TEOverflowScrollCtrl.prototype.endOverflow.call(this, element);
-	element.style.transform = element.style.transformOrigin = element.style.overflow = element.style.alignSelf = '';
+	element.style.transform = element.style.transformOrigin = element.style.overflow = element.style.alignSelf = element.style.marginBottom = '';
 };
 
 /**

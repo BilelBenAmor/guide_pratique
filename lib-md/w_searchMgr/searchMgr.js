@@ -106,23 +106,24 @@ window.searchMgr = {
 				window.history.pushState({}, document.title, window.location.pathname);
 				this.find(vParams.get("highlight"));
 				return;
-			} else this.getLastResults();
-			if (!this.fResult) return;
-			let vCnt = 0;
-			for (let i = 0; i < this.fResult.length; i++) if (this.fResult[i].url === tplMgr.fPageCurrent) vCnt++;
-			if (vCnt === 0) scServices.scSearch.resetLastQuery();
-			else {
-				this.declareManager().then(function (){
-					searchMgr.xUpdateUi();
-					if (searchMgr.fTextHits) {
-						if (tplMgr.fStore && tplMgr.fStore.get("gotoLastHit") === "true" && searchMgr.fTextHits.length > 1) {
-							searchMgr.fCurrHit = this.fTextHits.length - 2
-							searchMgr.sNxtHit();
-						} else searchMgr.sNxtHit();
-						if (tplMgr.fStore && tplMgr.fStore.get("gotoLastHit") === "true") tplMgr.fStore.set("gotoLastHit", false);
-					}
-				});
-			}
+			} else this.getLastResults().then(function(){
+				if (!searchMgr.fResult) return;
+				let vCnt = 0;
+				for (let i = 0; i < searchMgr.fResult.length; i++) if (searchMgr.fResult[i].url === tplMgr.fPageCurrent) vCnt++;
+				if (vCnt === 0) scServices.scSearch.resetLastQuery();
+				else {
+					searchMgr.declareManager().then(function (){
+						searchMgr.xUpdateUi();
+						if (searchMgr.fTextHits) {
+							if (tplMgr.fStore && tplMgr.fStore.get("gotoLastHit") === "true" && searchMgr.fTextHits.length > 1) {
+								searchMgr.fCurrHit = searchMgr.fTextHits.length - 2
+								searchMgr.sNxtHit();
+							} else searchMgr.sNxtHit();
+							if (tplMgr.fStore && tplMgr.fStore.get("gotoLastHit") === "true") tplMgr.fStore.set("gotoLastHit", false);
+						}
+					});
+				}
+			});
 		} catch (e) {
 			console.error(`ERROR - searchMgr.onLoad : ${e}`);
 		}
@@ -607,7 +608,7 @@ searchMgr.ListResultManager.prototype = {
 				vPgeBtn.href = scServices.scLoad.getRootUrl() + "/" + vPageUrl;
 				scDynUiMgr.addElement("span",vPgeBtn,"schPgeRank").innerHTML = "<span>" + vRankText + "</span>";
 				vHasMath = vHasMath || vPageRes.title.indexOf("<math>") >= 0 || vPageRes.title.indexOf("\\[") >= 0;
-				// Affiche un fil d'ariane si doublons (si la variable urls existe)
+				// Affiche un fil d'Ariane si doublons (si la variable urls existe)
 				if(vPageRes.urls.length > 1) {
 					vPageRes.fLbl.className = vPageRes.fLbl.className + " mnu_b"
 					const vTglBtn = searchMgr.xAddBtn(vPageRes.fLbl, "schParent_tgle_c", "+", null, vPgeBtn);
@@ -902,7 +903,7 @@ searchMgr.MenuManager.prototype = {
 		else vLnk.onclick = function(){try{
 			this.fMgr.fRequestedItem = this.fSrc;
 		}catch(e){}};
-		vLnk.innerHTML = '<span class="mnu_sch"><span class="capt">'+pSrc.label+'</span></span>';
+		vLnk.innerHTML = '<span class="mnu_sch">'+(pSrc.counter ? '<span class="counter">'+pSrc.counter+' </span>':'')+'<span class="capt">'+pSrc.label+'</span></span>';
 		pParent.fHasMath = pParent.fHasMath || pSrc.label.indexOf("<math>") >= 0 || pSrc.label.indexOf("\\[") >= 0;
 		pSrc.fLbl = vDiv;
 		pSrc.fLi = vLi;

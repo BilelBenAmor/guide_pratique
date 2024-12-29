@@ -57,10 +57,11 @@ window.outMgr = {
 			if ("ScSiRuleEnsureVisible" in window) vVisRule = new ScSiRuleEnsureVisible("ide:menu/des:.sel_yes/chi:div", "anc:ul.mnu");
 			this.fOut.className = this.fOut.className.replace("static", "");
 			this.fOut.style.overflow = this.fOverflowMethod;
-			this.fSrlUp = scDynUiMgr.addElement("div", this.fMnuFra, this.fCls + "SrlUpFra " + this.fClsOffUp, this.fOut);
+			const vBd = dom.newBd(this.fMnuFra);
+			this.fSrlUp = vBd.elt("div", this.fCls + "SrlUpFra " + this.fClsOffUp, this.fOut).currentUp();
 			this.fSrlUpBtn = tplMgr.addBtn(this.fSrlUp, this.fCls + "SrlUpBtn", this.fStrings[0], this.fStrings[1]);
 			this.fSrlUpBtn.setAttribute("aria-hiden", "true");
-			this.fSrlDwn = scDynUiMgr.addElement("div", this.fMnuFra, this.fCls + "SrlDwnFra " + this.fClsOffDown, this.fOut);
+			this.fSrlDwn = vBd.elt("div", this.fCls + "SrlDwnFra " + this.fClsOffDown, this.fOut).currentUp();
 			this.fSrlDwnBtn = tplMgr.addBtn(this.fSrlDwn, this.fCls + "SrlDwnBtn", this.fStrings[2], this.fStrings[3]);
 			this.fSrlDwnBtn.setAttribute("aria-hiden", "true");
 
@@ -149,15 +150,16 @@ window.outMgr = {
 				const vReq = await fetch(this.fUrlOutline);
 				if (!vReq.ok) throw new Error(`Status: ${vReq.status}`);
 				this.fOutlineSrc = JSON.parse(await vReq.text());
-				const iOutlineSetup = function (pItem) {
+				const iOutlineSetup = function (pItem, pCounter) {
 					if (pItem.children) {
 						for (let i = 0; i < pItem.children.length; i++) {
 							pItem.children[i].parent = pItem;
-							iOutlineSetup(pItem.children[i]);
+							pItem.children[i].counter = pCounter + (i+1);
+							iOutlineSetup(pItem.children[i], pCounter + (i+1) + ".");
 						}
 					}
 				};
-				iOutlineSetup(this.fOutlineSrc.module);
+				iOutlineSetup(this.fOutlineSrc.module, "");
 				return this.fOutlineSrc
 			} catch (e) {
 				console.error(`ERROR - outMgr.getOutline : ${e}`);
@@ -187,6 +189,21 @@ window.outMgr = {
 		return vProgress;
 	},
 
+	addCounters: function () {
+		if (this.fAddCounters) return;
+		this.fAddCounters = true;
+		const iMenuWalker = function (pUl, pPrefix) {
+			const vLis = scPaLib.findNodes("chi:li", pUl);
+				for (let i = 0; i < vLis.length; i++) {
+					const vLbl = scPaLib.findNode("chi:div/chi:.item/chi:span", vLis[i]);
+					const vBd = dom.newBd(vLbl);
+					vBd.elt("span", "counter", vLbl.firstChild).text(pPrefix + (i+1) + " ");
+					if (scPaLib.checkNode(".type_b", vLis[i])) iMenuWalker(scPaLib.findNode("chi:ul", vLis[i]), pPrefix + (i+1) + ".");
+				}
+		}
+		iMenuWalker(this.fOut, "");
+	},
+
 	loadSortKey: "AZ",
 
 	/* === Callbacks ========================================================== */
@@ -210,7 +227,8 @@ window.outMgr = {
 		await outMgr.xInitOutline();
 		if (!pBtn.fUl) {
 			const vLbl = pBtn.fLbl;
-			pBtn.fUl = scDynUiMgr.addElement("ul", vLbl.parentNode, "sub mnu_open");
+			const vBd = dom.newBd(vLbl.parentNode);
+			pBtn.fUl = vBd.elt("ul", "sub mnu_open").current();
 			pBtn.fUl.fTglBtn = pBtn;
 			let vLi, vDiv, vLnk, vType, vCls, vHasMath;
 			const vChildren = vLbl.fSrc.children;
@@ -218,16 +236,22 @@ window.outMgr = {
 				const vChi = vChildren[i];
 				vType = vChi.children ? "b" : "l";
 				vCls = "sel_no type_" + vType + " " + vChi.source + " dpt_" + (scPaLib.findNodes("anc:ul.sub", pBtn).length + 1) + " " + vChi.className;
-				vLi = scDynUiMgr.addElement("li", pBtn.fUl, vCls);
-				vDiv = scDynUiMgr.addElement("div", vLi, "lbl " + vCls);
+				vBd.elt("li", vCls);
+				vDiv = vBd.elt("div", "lbl " + vCls).current();
 				vDiv.fSrc = vChi;
-				vLnk = scDynUiMgr.addElement("a", vDiv, "item");
+				vLnk = vBd.elt("a", "item").current();
 				vLnk.href = scServices.scLoad.getRootUrl() + "/" + vChi.url;
 				vLnk.target = "_self";
-				vLnk.innerHTML = '<span>' + vChi.label + '</span>';
+				const vLbl = vBd.elt("span").current();
+				vLbl.innerHTML = vChi.label;
+				if (this.fAddCounters){
+					vBd.elt("span", "counter", vLbl.firstChild).text(vChi.counter + " ").up();
+				}
+				vBd.up();
 				if (vType == "b") outMgr.xAddToggleBtn(vDiv, vChi.label);
 				if ("scormMgr" in window) scormMgr.buildSeenBtn(vDiv, vLnk.href, vChi.label);
 				vHasMath = vHasMath || vChi.label.indexOf("<math>") >= 0 || vChi.label.indexOf("\\[") >= 0;
+				vBd.up().up().up();
 			}
 			if (("mathjaxMgr" in window) && vHasMath) {
 				if (mathjaxMgr.fActive) mathjaxMgr.typeset(pBtn.fUl);

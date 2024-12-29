@@ -21,8 +21,11 @@ window.tplMgr = {
 		pathRoot: "ide:root",
 		pathContent: "ide:content",
 		pathPanelParent : "ide:document",
+		type : "dys",
 		defaultPanelInactive: true,
-		ignoreFilter: ".dysPanel|.hidden|.footnotes|.colBlockTgleBtn|.CodeMirror-static|script|noscript|object|.tooltip_ref|.toolbar|.txt_mathtex_tl|.MathJax_Preview|.MathJax_SVG_Display"
+		optNumHeadings: true,
+		optScaleH2: true,
+		ignoreFilter: ".dysPanel|.hidden|.footnotes|.CodeMirror-static|script|noscript|object|.tooltip_ref|.bkSolResOut|.toolbar|.txt_mathtex_tl|.MathJax_Preview|.MathJax_SVG_Display|i.type"
 	},
 
 	fStrings: ["Agrandir", "Cacher des éléments de l\'interface pour agrandir le contenu",
@@ -106,8 +109,8 @@ window.tplMgr = {
 			if (window.location.protocol === "file:") this.fRoot.classList.add("fileProtocol");
 
 			// Accessibility Toolbar
-			if(scPaLib.checkNode(".accessToolbar", document.body)){
-				this.setDysOptions();
+			if(pParam.accessBar !== "none"){
+				this.setDysOptions(pParam.accessBar);
 				const vScript = document.createElement('script');
 				vScript.setAttribute("src", scServices.scLoad.resolveDestUri("/lib-md/w_tplMgr/dys/dys.js"))
 				document.getElementsByTagName("head")[0].appendChild(vScript);
@@ -118,6 +121,7 @@ window.tplMgr = {
 				document.getElementsByTagName("head")[0].appendChild(vCss);
 			}
 
+			// Theme button
 			if(this.fThemingBtnActive || pParam.themeMode==="button"){
 				let vBd = dom.newBd(scPaLib.findNode(this.fThemingBtnPath));
 				this.fThemingBtn = vBd.elt("a", "themeBtn")
@@ -146,10 +150,9 @@ window.tplMgr = {
 			} else if (pParam.themeMode !== "none"){
 				document.documentElement.setAttribute("data-theme", pParam.themeMode);
 			}
-			// Theme button
 
 			// Burger menu button
-			if (this.fMenuBtnActive || pParam.addMenuBtn){
+			if ((this.fMenuBtnActive || pParam.addMenuBtn) && !scPaLib.checkNode(".home", document.body)){
 				let vBd = dom.newBd(scPaLib.findNode(this.fMenuBtnPath));
 				vBd.elt("a", "menuBtn")
 					.att("href", "#")
@@ -170,14 +173,18 @@ window.tplMgr = {
 		}
 	},
 
-	setDysOptions: function () {
+	setDysOptions: function (pType) {
 		window.dysOptions = {
-			disable : scPaLib.checkNode(".home", document.body),
-			pathRoot : "ide:root",
-			pathContent : "ide:content",
+			type : pType || this.fDysOptions.type,
+			pathRoot : this.fDysOptions.pathRoot,
+			pathContent : this.fDysOptions.pathContent,
 			pathBtnParent : scPaLib.checkNode(".sco|.rubis", document.body) ? "ide:header" : "ide:tools",
-			pathPanelParent : "ide:document",
-			ignoreFilter : ".dysPanel|.hidden|.footnotes|.CodeMirror-static|script|noscript|object|.tooltip_ref|.bkSolResOut|.toolbar|.txt_mathtex_tl|.MathJax_Preview|.MathJax_SVG_Display"
+			pathPanelParent : this.fDysOptions.pathPanelParent,
+			disable : scPaLib.checkNode(".home", document.body),
+			defaultPanelInactive : this.fDysOptions.defaultPanelInactive,
+			optNumHeadings: this.fDysOptions.optNumHeadings ? !!scPaLib.findNode("ide:menu") : false,
+			optScaleH2: this.fDysOptions.optScaleH2 ? !!scPaLib.findNode("ide:menu/chi:ul/chi:li.type_b") : false,
+			ignoreFilter : this.fDysOptions.ignoreFilter
 		}
 	},
 
@@ -237,6 +244,7 @@ window.tplMgr = {
 					}
 				}
 			}
+			document.body.classList.add("loaded");
 		} catch (e) {
 			console.error(`ERROR - tplMgr.onLoad : ${e}`);
 		}
@@ -445,6 +453,12 @@ window.tplMgr = {
 	/** Callback function. */
 	sCollBlkOpen: function (pCo, pTitle) {
 		if (pTitle) pTitle.title = tplMgr.fStrings[4].replace("%s", (pTitle.innerText ? pTitle.innerText : pTitle.textContent));
+		if (! pCo.fInitChildren){
+			if ("scImageMgr" in window) {
+				scImageMgr.xInitSqs(pCo);
+			}
+			pCo.fInitChildren = true;
+		}
 	},
 	/** Callback function. */
 	sCollBlkClose: function (pCo, pTitle) {
